@@ -539,6 +539,145 @@ export class ClaudianSettingTab extends PluginSettingTab {
       this.renderContextLimitsSection();
     });
 
+    new Setting(containerEl).setName(t('settings.codingPlanQuota')).setHeading();
+
+    // Coding Plan Quota enabled toggle
+    new Setting(containerEl)
+      .setName(t('settings.codingPlanQuota.enabled.name'))
+      .setDesc(t('settings.codingPlanQuota.enabled.desc'))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.codingPlanQuota?.enabled ?? false)
+          .onChange(async (value) => {
+            this.plugin.settings.codingPlanQuota ??= {
+              enabled: false,
+              zhipuApiKey: '',
+              zhipuEnabled: true,
+              kimiApiKey: '',
+              kimiEnabled: true,
+              refreshInterval: 5,
+            };
+            this.plugin.settings.codingPlanQuota.enabled = value;
+            await this.plugin.saveSettings();
+            this.display();
+            await this.plugin.refreshQuotaStatus();
+          })
+      );
+
+    // Only show provider settings if quota monitoring is enabled
+    if (this.plugin.settings.codingPlanQuota?.enabled) {
+      // 智谱AI settings
+      new Setting(containerEl)
+        .setName(t('settings.codingPlanQuota.zhipuEnabled.name'))
+        .setDesc(t('settings.codingPlanQuota.zhipuEnabled.desc'))
+        .addToggle((toggle) =>
+          toggle
+            .setValue(this.plugin.settings.codingPlanQuota?.zhipuEnabled ?? true)
+            .onChange(async (value) => {
+              this.plugin.settings.codingPlanQuota ??= {
+                enabled: true,
+                zhipuApiKey: '',
+                zhipuEnabled: true,
+                kimiApiKey: '',
+                kimiEnabled: true,
+                refreshInterval: 5,
+              };
+              this.plugin.settings.codingPlanQuota.zhipuEnabled = value;
+              await this.plugin.saveSettings();
+              await this.plugin.refreshQuotaStatus();
+            })
+        );
+
+      if (this.plugin.settings.codingPlanQuota?.zhipuEnabled) {
+        new Setting(containerEl)
+          .setName(t('settings.codingPlanQuota.zhipuApiKey.name'))
+          .setDesc(t('settings.codingPlanQuota.zhipuApiKey.desc'))
+          .addText((text) => {
+            text
+              .setPlaceholder('your-zhipu-api-key')
+              .setValue(this.plugin.settings.codingPlanQuota?.zhipuApiKey ?? '')
+              .onChange(async (value) => {
+                this.plugin.settings.codingPlanQuota ??= {
+                  enabled: true,
+                  zhipuApiKey: '',
+                  zhipuEnabled: true,
+                  kimiApiKey: '',
+                  kimiEnabled: true,
+                  refreshInterval: 5,
+                };
+                this.plugin.settings.codingPlanQuota.zhipuApiKey = value;
+                await this.plugin.saveSettings();
+              });
+            text.inputEl.type = 'password';
+            text.inputEl.addClass('claudian-settings-coding-plan-api-input');
+          });
+      }
+
+      // Kimi settings
+      new Setting(containerEl)
+        .setName(t('settings.codingPlanQuota.kimiEnabled.name'))
+        .setDesc(t('settings.codingPlanQuota.kimiEnabled.desc'))
+        .addToggle((toggle) =>
+          toggle
+            .setValue(this.plugin.settings.codingPlanQuota?.kimiEnabled ?? true)
+            .onChange(async (value) => {
+              this.plugin.settings.codingPlanQuota ??= {
+                enabled: true,
+                zhipuApiKey: '',
+                zhipuEnabled: true,
+                kimiApiKey: '',
+                kimiEnabled: true,
+                refreshInterval: 5,
+              };
+              this.plugin.settings.codingPlanQuota.kimiEnabled = value;
+              await this.plugin.saveSettings();
+              await this.plugin.refreshQuotaStatus();
+            })
+        );
+
+      if (this.plugin.settings.codingPlanQuota?.kimiEnabled) {
+        new Setting(containerEl)
+          .setName(t('settings.codingPlanQuota.kimiApiKey.name'))
+          .setDesc(t('settings.codingPlanQuota.kimiApiKey.desc'))
+          .addText((text) => {
+            text
+              .setPlaceholder('your-kimi-api-key')
+              .setValue(this.plugin.settings.codingPlanQuota?.kimiApiKey ?? '')
+              .onChange(async (value) => {
+                this.plugin.settings.codingPlanQuota ??= {
+                  enabled: true,
+                  zhipuApiKey: '',
+                  zhipuEnabled: true,
+                  kimiApiKey: '',
+                  kimiEnabled: true,
+                  refreshInterval: 5,
+                };
+                this.plugin.settings.codingPlanQuota.kimiApiKey = value;
+                await this.plugin.saveSettings();
+              });
+            text.inputEl.type = 'password';
+            text.inputEl.addClass('claudian-settings-coding-plan-api-input');
+          });
+      }
+
+      // Manual refresh button
+      new Setting(containerEl)
+        .setName(t('settings.codingPlanQuota.refresh.name'))
+        .setDesc(t('settings.codingPlanQuota.refresh.desc'))
+        .addButton((button) => {
+          button
+            .setButtonText(t('settings.codingPlanQuota.refresh.button'))
+            .setCta()
+            .onClick(async () => {
+              button.setDisabled(true);
+              button.setButtonText(t('settings.codingPlanQuota.refresh.loading'));
+              await this.plugin.refreshQuotaStatus();
+              button.setDisabled(false);
+              button.setButtonText(t('settings.codingPlanQuota.refresh.button'));
+            });
+        });
+    }
+
     new Setting(containerEl).setName(t('settings.advanced')).setHeading();
 
     new Setting(containerEl)

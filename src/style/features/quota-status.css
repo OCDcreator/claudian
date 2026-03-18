@@ -1,0 +1,92 @@
+/**
+ * Coding Plan 额度状态栏样式
+ */
+
+/* 状态栏基础样式 */
+.claudian-quota-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 0 6px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* 单个提供商容器 */
+.claudian-quota-provider {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.claudian-quota-provider:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+/* 图标 */
+.claudian-quota-icon {
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* 百分比数字 */
+.claudian-quota-percent {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 分隔符 */
+.claudian-quota-separator {
+  color: var(--text-muted);
+  opacity: 0.4;
+  margin: 0 4px;
+  font-size: 10px;
+}
+
+/* 警告状态 - 剩余额度低于 20% */
+.claudian-quota-provider.claudian-quota-warning {
+  background-color: rgba(255, 165, 0, 0.15);
+}
+
+.claudian-quota-provider.claudian-quota-warning .claudian-quota-percent {
+  color: var(--text-warning, #ffa500);
+  font-weight: 600;
+}
+
+/* 危险状态 - 剩余额度低于 10% */
+.claudian-quota-provider.claudian-quota-danger {
+  background-color: rgba(255, 0, 0, 0.15);
+  animation: claudian-quota-pulse 2s infinite;
+}
+
+.claudian-quota-provider.claudian-quota-danger .claudian-quota-percent {
+  color: var(--text-error, #ff0000);
+  font-weight: 600;
+}
+
+/* 脉冲动画 */
+@keyframes claudian-quota-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* 设置面板样式 */
+.claudian-settings-coding-plan-api-input {
+  font-family: var(--font-monospace);
+}
+
+/* 响应式：小屏幕隐藏状态栏 */
+@media screen and (max-width: 600px) {
+  .claudian-quota-status-bar {
+    display: none;
+  }
+}

@@ -31,6 +31,7 @@ import {
 } from './core/types';
 import { ClaudianView } from './features/chat/ClaudianView';
 import { type InlineEditContext, InlineEditModal } from './features/inline-edit/ui/InlineEditModal';
+import { QuotaStatusBar } from './features/quota';
 import { ClaudianSettingTab } from './features/settings/ClaudianSettings';
 import { setLocale } from './i18n';
 import { ClaudeCliResolver } from './utils/claudeCli';
@@ -56,6 +57,7 @@ export default class ClaudianPlugin extends Plugin {
   agentManager: AgentManager;
   storage: StorageService;
   cliResolver: ClaudeCliResolver;
+  quotaStatusBar: QuotaStatusBar | null = null;
   private conversations: Conversation[] = [];
   private runtimeEnvironmentVariables = '';
 
@@ -198,6 +200,9 @@ export default class ClaudianPlugin extends Plugin {
     });
 
     this.addSettingTab(new ClaudianSettingTab(this.app, this));
+
+    // Initialize Coding Plan quota status bar
+    this.initializeQuotaStatusBar();
   }
 
   async onunload() {
@@ -208,6 +213,12 @@ export default class ClaudianPlugin extends Plugin {
         const state = tabManager.getPersistedState();
         await this.storage.setTabManagerState(state);
       }
+    }
+
+    // Destroy quota status bar
+    if (this.quotaStatusBar) {
+      this.quotaStatusBar.destroy();
+      this.quotaStatusBar = null;
     }
   }
 
@@ -1101,6 +1112,52 @@ export default class ClaudianPlugin extends Plugin {
       return leaves[0].view as ClaudianView;
     }
     return null;
+  }
+
+  /**
+   * Initialize Coding Plan quota status bar.
+   * Creates the status bar item if quota monitoring is enabled.
+   */
+  private initializeQuotaStatusBar(): void {
+    const quotaSettings = this.settings.codingPlanQuota;
+    if (!quotaSettings?.enabled) {
+      return;
+    }
+
+    this.quotaStatusBar = new QuotaStatusBar(this, {
+      getZhipuApiKey: async () => quotaSettings.zhipuApiKey || null,
+      getKimiApiKey: async () => quotaSettings.kimiApiKey || null,
+      isZhipuEnabled: () => quotaSettings.zhipuEnabled ?? true,
+      isKimiEnabled: () => quotaSettings.kimiEnabled ?? true,
+    });
+
+    this.quotaStatusBar.startAutoRefresh();
+  }
+
+  /**
+   * Refresh Coding Plan quota status.
+   * Called when settings change.
+   */
+  async refreshQuotaStatus(): Promise<void> {
+    const quotaSettings = this.settings.codingPlanQuota;
+
+    // If disabled, destroy existing status bar
+    if (!quotaSettings?.enabled) {
+      if (this.quotaStatusBar) {
+        this.quotaStatusBar.destroy();
+        this.quotaStatusBar = null;
+      }
+      return;
+    }
+
+    // If no status bar exists, initialize it
+    if (!this.quotaStatusBar) {
+      this.initializeQuotaStatusBar();
+      return;
+    }
+
+    // Otherwise, just refresh the data
+    await this.quotaStatusBar.refreshAll(true);
   }
 
   /** Returns all open Claudian views in the workspace. */

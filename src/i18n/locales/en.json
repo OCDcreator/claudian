@@ -292,6 +292,34 @@
     "language": {
       "name": "Language",
       "desc": "Change the display language of the plugin interface"
+    },
+    "codingPlanQuota": {
+      "enabled": {
+        "name": "Enable quota monitoring",
+        "desc": "Show API quota usage in the status bar. Supports Zhipu AI and Kimi."
+      },
+      "zhipuEnabled": {
+        "name": "Enable Zhipu AI",
+        "desc": "Monitor Zhipu AI Coding Plan quota"
+      },
+      "zhipuApiKey": {
+        "name": "Zhipu AI API Key",
+        "desc": "Your Zhipu AI API key for quota queries"
+      },
+      "kimiEnabled": {
+        "name": "Enable Kimi",
+        "desc": "Monitor Kimi For Coding quota"
+      },
+      "kimiApiKey": {
+        "name": "Kimi API Key",
+        "desc": "Your Kimi API key for quota queries"
+      },
+      "refresh": {
+        "name": "Refresh quota",
+        "desc": "Manually refresh quota data from all providers",
+        "button": "Refresh now",
+        "loading": "Refreshing..."
+      }
     }
   }
 }

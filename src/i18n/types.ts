@@ -240,4 +240,21 @@ export type TranslationKey =
 
   // Settings - Language
   | 'settings.language.name'
-  | 'settings.language.desc';
+  | 'settings.language.desc'
+
+  // Settings - Coding Plan Quota
+  | 'settings.codingPlanQuota'
+  | 'settings.codingPlanQuota.enabled.name'
+  | 'settings.codingPlanQuota.enabled.desc'
+  | 'settings.codingPlanQuota.zhipuEnabled.name'
+  | 'settings.codingPlanQuota.zhipuEnabled.desc'
+  | 'settings.codingPlanQuota.zhipuApiKey.name'
+  | 'settings.codingPlanQuota.zhipuApiKey.desc'
+  | 'settings.codingPlanQuota.kimiEnabled.name'
+  | 'settings.codingPlanQuota.kimiEnabled.desc'
+  | 'settings.codingPlanQuota.kimiApiKey.name'
+  | 'settings.codingPlanQuota.kimiApiKey.desc'
+  | 'settings.codingPlanQuota.refresh.name'
+  | 'settings.codingPlanQuota.refresh.desc'
+  | 'settings.codingPlanQuota.refresh.button'
+  | 'settings.codingPlanQuota.refresh.loading';

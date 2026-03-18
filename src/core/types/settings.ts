@@ -299,6 +299,22 @@ export interface ClaudianSettings {
 
   // Slash commands
   hiddenSlashCommands: string[];  // Command names to hide from dropdown (user preference)
+
+  // Coding Plan 额度查询设置
+  codingPlanQuota: {
+    /** 是否启用额度查询 */
+    enabled: boolean;
+    /** 智谱AI API Key */
+    zhipuApiKey: string;
+    /** 是否启用智谱AI额度查询 */
+    zhipuEnabled: boolean;
+    /** Kimi API Key */
+    kimiApiKey: string;
+    /** 是否启用 Kimi 额度查询 */
+    kimiEnabled: boolean;
+    /** 自动刷新间隔（分钟） */
+    refreshInterval: number;
+  };
 }
 
 /** Default Claudian-specific settings. */
@@ -365,6 +381,16 @@ export const DEFAULT_SETTINGS: ClaudianSettings = {
 
   // Slash commands
   hiddenSlashCommands: [],  // No commands hidden by default
+
+  // Coding Plan 额度查询设置
+  codingPlanQuota: {
+    enabled: false,  // 默认关闭
+    zhipuApiKey: '',
+    zhipuEnabled: true,  // 启用智谱AI
+    kimiApiKey: '',
+    kimiEnabled: true,  // 启用 Kimi
+    refreshInterval: 5,  // 默认 5 分钟
+  },
 };
 
 /** Default CC-compatible settings. */

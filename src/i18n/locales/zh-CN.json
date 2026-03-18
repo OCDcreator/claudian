@@ -292,6 +292,34 @@
     "language": {
       "name": "语言",
       "desc": "更改插件界面的显示语言"
+    },
+    "codingPlanQuota": {
+      "enabled": {
+        "name": "启用额度监控",
+        "desc": "在状态栏显示 API 额度使用情况。支持智谱 AI 和 Kimi。"
+      },
+      "zhipuEnabled": {
+        "name": "启用智谱 AI",
+        "desc": "监控智谱 AI Coding Plan 额度"
+      },
+      "zhipuApiKey": {
+        "name": "智谱 AI API Key",
+        "desc": "用于查询额度的智谱 AI API 密钥"
+      },
+      "kimiEnabled": {
+        "name": "启用 Kimi",
+        "desc": "监控 Kimi For Coding 额度"
+      },
+      "kimiApiKey": {
+        "name": "Kimi API Key",
+        "desc": "用于查询额度的 Kimi API 密钥"
+      },
+      "refresh": {
+        "name": "刷新额度",
+        "desc": "手动从所有提供商刷新额度数据",
+        "button": "立即刷新",
+        "loading": "刷新中..."
+      }
     }
   }
 }

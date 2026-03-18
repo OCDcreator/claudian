@@ -131,6 +131,14 @@ describe('types.ts', () => {
         openInMainTab: false,
         hiddenSlashCommands: [],
         effortLevel: 'high',
+        codingPlanQuota: {
+          enabled: false,
+          zhipuApiKey: '',
+          zhipuEnabled: true,
+          kimiApiKey: '',
+          kimiEnabled: true,
+          refreshInterval: 5,
+        },
       };
 
       expect(settings.enableBlocklist).toBe(false);
@@ -173,6 +181,14 @@ describe('types.ts', () => {
         openInMainTab: false,
         hiddenSlashCommands: [],
         effortLevel: 'high',
+        codingPlanQuota: {
+          enabled: false,
+          zhipuApiKey: '',
+          zhipuEnabled: true,
+          kimiApiKey: '',
+          kimiEnabled: true,
+          refreshInterval: 5,
+        },
       };
 
       expect(settings.model).toBe('anthropic/custom-model-v1');
@@ -215,6 +231,14 @@ describe('types.ts', () => {
         openInMainTab: false,
         hiddenSlashCommands: [],
         effortLevel: 'high',
+        codingPlanQuota: {
+          enabled: false,
+          zhipuApiKey: '',
+          zhipuEnabled: true,
+          kimiApiKey: '',
+          kimiEnabled: true,
+          refreshInterval: 5,
+        },
       };
 
       expect(settings.lastClaudeModel).toBe('opus');
