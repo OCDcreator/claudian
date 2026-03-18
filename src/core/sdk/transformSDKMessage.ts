@@ -148,11 +148,19 @@ export function* transformSDKMessage(
       // Extract usage from main agent assistant messages only (not subagent)
       // This gives accurate per-turn context usage without subagent token pollution
       const usage = (message.message as { usage?: MessageUsage } | undefined)?.usage;
-      if (parentToolUseId === null && usage) {
-        const inputTokens = usage.input_tokens ?? 0;
-        const cacheCreationInputTokens = usage.cache_creation_input_tokens ?? 0;
-        const cacheReadInputTokens = usage.cache_read_input_tokens ?? 0;
-        const contextTokens = inputTokens + cacheCreationInputTokens + cacheReadInputTokens;
+      const topLevelUsage = (message as { usage?: MessageUsage }).usage;
+      if (parentToolUseId === null && (usage || topLevelUsage)) {
+        const activeUsage = topLevelUsage ?? usage!;
+        const inputTokens = activeUsage.input_tokens ?? 0;
+        const cacheCreationInputTokens = activeUsage.cache_creation_input_tokens ?? 0;
+        const cacheReadInputTokens = activeUsage.cache_read_input_tokens ?? 0;
+
+        // 智谱 GLM: 顶层 usage 存在，input_tokens 不含缓存
+        // 原生 Anthropic: 只有 message.usage，input_tokens 已含缓存
+        const isZhipu = topLevelUsage != null;
+        const contextTokens = isZhipu
+          ? inputTokens + cacheReadInputTokens
+          : inputTokens + cacheCreationInputTokens + cacheReadInputTokens;
 
         const model = options?.intendedModel ?? 'sonnet';
         const contextWindow = getContextWindowSize(model, options?.customContextLimits);
@@ -215,6 +223,33 @@ export function* transformSDKMessage(
     case 'stream_event': {
       const parentToolUseId = message.parent_tool_use_id ?? null;
       const event = message.event;
+
+      // Handle message_delta usage (智谱 GLM returns real usage here)
+      if (event?.type === 'message_delta' && (event as { usage?: MessageUsage }).usage) {
+        const eventUsage = (event as { usage?: MessageUsage }).usage!;
+        const inputTokens = eventUsage.input_tokens ?? 0;
+        const cacheCreationInputTokens = eventUsage.cache_creation_input_tokens ?? 0;
+        const cacheReadInputTokens = eventUsage.cache_read_input_tokens ?? 0;
+        // 智谱 GLM: input_tokens 不含缓存，需要加上 cache_read_input_tokens
+        const contextTokens = inputTokens + cacheReadInputTokens;
+
+        const model = options?.intendedModel ?? 'sonnet';
+        const contextWindow = getContextWindowSize(model, options?.customContextLimits);
+        const percentage = Math.min(100, Math.max(0, Math.round((contextTokens / contextWindow) * 100)));
+
+        const usageInfo: UsageInfo = {
+          model,
+          inputTokens,
+          outputTokens: 0,
+          cacheCreationInputTokens,
+          cacheReadInputTokens,
+          contextWindow,
+          contextTokens,
+          percentage,
+        };
+        yield { type: 'usage', usage: usageInfo };
+      }
+
       if (event?.type === 'content_block_start' && event.content_block?.type === 'tool_use') {
         yield {
           type: 'tool_use',
@@ -241,7 +276,7 @@ export function* transformSDKMessage(
       break;
     }
 
-    case 'result':
+    case 'result': {
       if (isResultError(message)) {
         const content = message.errors.filter((e) => e.trim().length > 0).join('\n');
         yield {
@@ -250,8 +285,47 @@ export function* transformSDKMessage(
         };
       }
 
-      // Usage is now extracted from assistant messages for accuracy (excludes subagent tokens)
-      // Result message usage is aggregated across main + subagents, causing inaccurate spikes
+      // Extract usage from result message only for 智谱 GLM (returns final usage here)
+      // For native Anthropic, usage is already extracted from assistant messages
+      const resultMessage = message as { usage?: MessageUsage & { output_tokens?: number }; modelUsage?: Record<string, unknown> };
+      
+      // Detect 智谱 format: modelUsage keys don't start with "claude"
+      const modelUsageKeys = resultMessage.modelUsage ? Object.keys(resultMessage.modelUsage) : [];
+      const isZhipuFormat = modelUsageKeys.length > 0 && modelUsageKeys.some((k) => !k.startsWith('claude'));
+      
+      // Only extract usage if:
+      // 1. It's 智谱 format (non-claude models in modelUsage)
+      // 2. result.usage exists and has actual token values (not all zeros)
+      if (isZhipuFormat && resultMessage.usage) {
+        const resultUsage = resultMessage.usage;
+        const inputTokens = resultUsage.input_tokens ?? 0;
+        const outputTokens = resultUsage.output_tokens ?? 0;
+        const cacheCreationInputTokens = resultUsage.cache_creation_input_tokens ?? 0;
+        const cacheReadInputTokens = resultUsage.cache_read_input_tokens ?? 0;
+
+        // Only yield usage if there are actual token values
+        if (inputTokens > 0 || outputTokens > 0 || cacheCreationInputTokens > 0 || cacheReadInputTokens > 0) {
+          const model = options?.intendedModel;
+          const contextWindow = model ? getContextWindowSize(model, options?.customContextLimits) : 200000;
+
+          // 智谱 GLM: input_tokens 不含缓存，需要加上 cache_read_input_tokens
+          const contextTokens = inputTokens + cacheReadInputTokens;
+
+          const percentage = Math.min(100, Math.max(0, Math.round((contextTokens / contextWindow) * 100)));
+
+          const usageInfo: UsageInfo = {
+            model: model ?? 'sonnet',
+            inputTokens,
+            outputTokens,
+            cacheCreationInputTokens,
+            cacheReadInputTokens,
+            contextWindow,
+            contextTokens,
+            percentage,
+          };
+          yield { type: 'usage', usage: usageInfo };
+        }
+      }
 
       if ('modelUsage' in message && message.modelUsage) {
         const modelUsage = message.modelUsage as Record<string, { contextWindow?: number }>;
@@ -261,6 +335,7 @@ export function* transformSDKMessage(
         }
       }
       break;
+    }
 
     default:
       break;

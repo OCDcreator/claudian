@@ -191,6 +191,7 @@ export type StreamChunk =
 export interface UsageInfo {
   model?: string;
   inputTokens: number;
+  outputTokens?: number;
   cacheCreationInputTokens: number;
   cacheReadInputTokens: number;
   contextWindow: number;
