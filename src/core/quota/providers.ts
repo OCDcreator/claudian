@@ -53,13 +53,16 @@ export class ZhipuQuotaService {
   }
 
   private parseWindow(unit: number, number: number): { unit: TimeWindowUnit; duration: number } {
-    // unit: 1=天, 3=小时, 5=分钟
+    // unit: 1=天, 3=小时, 5=分钟, 6=周(作为7天处理)
     const unitMap: Record<number, TimeWindowUnit> = {
       1: 'day',
       3: 'hour',
       5: 'minute',
+      6: 'day', // 智谱的6表示周，转为天
     };
-    return { unit: unitMap[unit] ?? 'hour', duration: number };
+    // 如果是周(unit=6)，duration 转为天数
+    const duration = unit === 6 ? number * 7 : number;
+    return { unit: unitMap[unit] ?? 'hour', duration };
   }
 }
 
@@ -117,7 +120,7 @@ export class KimiQuotaService {
           total: this.parseNumber(item.detail.limit),
           used: this.parseNumber(item.detail.used),
           remaining: this.parseNumber(item.detail.remaining),
-          percentage: this.calcPercentage(item.detail.used, item.detail.limit),
+          percentage: this.calcPercentage(item.detail.used, item.detail.limit, item.detail.remaining),
           resetTime: item.detail.resetTime,
         });
       }
@@ -136,11 +139,24 @@ export class KimiQuotaService {
     return typeof value === 'string' ? parseInt(value, 10) : value;
   }
 
-  private calcPercentage(used: string | number | undefined, total: string | number | undefined): number {
-    const u = this.parseNumber(used) ?? 0;
+  private calcPercentage(used: string | number | undefined, total: string | number | undefined, remaining?: string | number | undefined): number {
     const t = this.parseNumber(total) ?? 100;
     if (t <= 0) return 0;
-    return Math.min(100, Math.round((u / t) * 100));
+    
+    // 优先使用 used 字段
+    if (used !== undefined) {
+      const u = this.parseNumber(used) ?? 0;
+      return Math.min(100, Math.round((u / t) * 100));
+    }
+    
+    // 如果没有 used，使用 remaining 计算
+    if (remaining !== undefined) {
+      const r = this.parseNumber(remaining) ?? t;
+      const usedAmount = t - r;
+      return Math.min(100, Math.round((usedAmount / t) * 100));
+    }
+    
+    return 0;
   }
 
   private translateTimeUnit(timeUnit: string): TimeWindowUnit {

@@ -7,6 +7,8 @@ import type { Plugin } from 'obsidian';
 
 import type { ProviderQuota, QuotaLimit } from '../../core/quota';
 import { KimiQuotaService, ZhipuQuotaService } from '../../core/quota';
+import { KIMI_ICON_SVG, ZHIPU_ICON_SVG } from '../../shared/icons';
+import { QuotaTooltip } from './QuotaTooltip';
 
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5分钟自动刷新
 
@@ -28,6 +30,7 @@ interface ProviderStatusItem {
   provider: 'zhipu' | 'kimi';
   quota: ProviderQuota;
   element: HTMLElement;
+  tooltip: QuotaTooltip;
 }
 
 export class QuotaStatusBar {
@@ -102,27 +105,54 @@ export class QuotaStatusBar {
   }
 
   /**
-   * 获取每5小时限制的百分比（用于状态栏显示）
+   * 获取用于状态栏显示的百分比
+   * 智谱：每5小时限制
+   * Kimi：优先显示每周额度（主额度），因为300分钟限制API数据有延迟
    */
   private getDisplayPercentage(quota: ProviderQuota): number | null {
-    // 找到每5小时的限制
-    const hourly5Limit = quota.limits.find(
-      (l) => l.window.unit === 'hour' && l.window.duration === 5
-    );
-    if (hourly5Limit) {
-      return 100 - hourly5Limit.percentage;
+    // 智谱：找到每5小时的限制
+    if (quota.provider === 'zhipu') {
+      const hourly5Limit = quota.limits.find(
+        (l) => l.window.unit === 'hour' && l.window.duration === 5
+      );
+      if (hourly5Limit) {
+        return 100 - hourly5Limit.percentage;
+      }
+      // fallback: 第一个非每月限制
+      const nonMonthlyLimit = quota.limits.find(
+        (l) => !(l.window.unit === 'day' && l.window.duration >= 28)
+      );
+      if (nonMonthlyLimit) {
+        return 100 - nonMonthlyLimit.percentage;
+      }
+      if (quota.limits.length > 0) {
+        return 100 - quota.limits[0].percentage;
+      }
+      return null;
     }
-    // 如果没找到5小时的，找第一个非每月的限制
-    const nonMonthlyLimit = quota.limits.find(
-      (l) => !(l.window.unit === 'day' && l.window.duration >= 28)
-    );
-    if (nonMonthlyLimit) {
-      return 100 - nonMonthlyLimit.percentage;
+
+    // Kimi：优先显示每周额度（7天），因为300分钟限制API数据有延迟
+    if (quota.provider === 'kimi') {
+      // 找每周额度（7天）
+      const weeklyLimit = quota.limits.find(
+        (l) => l.window.unit === 'day' && l.window.duration === 7
+      );
+      if (weeklyLimit) {
+        return 100 - weeklyLimit.percentage;
+      }
+      // fallback: 第一个有准确数据的限制
+      const limitWithData = quota.limits.find(
+        (l) => l.used !== undefined
+      );
+      if (limitWithData) {
+        return 100 - limitWithData.percentage;
+      }
+      if (quota.limits.length > 0) {
+        return 100 - quota.limits[0].percentage;
+      }
+      return null;
     }
-    // fallback: 使用第一个限制
-    if (quota.limits.length > 0) {
-      return 100 - quota.limits[0].percentage;
-    }
+
     return null;
   }
 
@@ -144,14 +174,14 @@ export class QuotaStatusBar {
 
     // 更新或创建智谱项
     if (zhipuQuota) {
-      this.updateProviderItem('zhipu', zhipuQuota, '🟢');
+      this.updateProviderItem('zhipu', zhipuQuota, ZHIPU_ICON_SVG);
     } else {
       this.removeProviderItem('zhipu');
     }
 
     // 更新或创建 Kimi 项
     if (kimiQuota) {
-      this.updateProviderItem('kimi', kimiQuota, '🌙');
+      this.updateProviderItem('kimi', kimiQuota, KIMI_ICON_SVG);
     } else {
       this.removeProviderItem('kimi');
     }
@@ -166,7 +196,7 @@ export class QuotaStatusBar {
   private updateProviderItem(
     provider: 'zhipu' | 'kimi',
     quota: ProviderQuota,
-    icon: string
+    iconSvg: string
   ): void {
     let item = this.providerItems.get(provider);
     const percentage = this.getDisplayPercentage(quota);
@@ -185,7 +215,11 @@ export class QuotaStatusBar {
         void this.refreshAll(true);
       });
 
-      item = { provider, quota, element };
+      // 创建 Tooltip
+      const tooltip = new QuotaTooltip();
+      tooltip.bind(element, this.buildTooltipData(quota, provider === 'zhipu' ? '智谱AI' : 'Kimi'));
+
+      item = { provider, quota, element, tooltip };
       this.providerItems.set(provider, item);
     } else {
       // 更新配额数据
@@ -196,9 +230,9 @@ export class QuotaStatusBar {
     const element = item.element;
     element.empty();
 
-    // 图标
+    // 图标 - 使用 SVG
     const iconEl = element.createSpan({ cls: 'claudian-quota-icon' });
-    iconEl.textContent = icon;
+    iconEl.innerHTML = iconSvg;
 
     // 百分比
     const percentEl = element.createSpan({ cls: 'claudian-quota-percent' });
@@ -212,8 +246,8 @@ export class QuotaStatusBar {
       element.addClass('claudian-quota-warning');
     }
 
-    // 设置独立的 tooltip
-    element.title = this.buildTooltip(quota, provider === 'zhipu' ? '智谱AI' : 'Kimi');
+    // 更新 Tooltip 数据
+    item.tooltip.bind(element, this.buildTooltipData(quota, provider === 'zhipu' ? '智谱AI' : 'Kimi'));
   }
 
   /**
@@ -222,6 +256,7 @@ export class QuotaStatusBar {
   private removeProviderItem(provider: 'zhipu' | 'kimi'): void {
     const item = this.providerItems.get(provider);
     if (item) {
+      item.tooltip.destroy();
       item.element.remove();
       this.providerItems.delete(provider);
     }
@@ -252,32 +287,26 @@ export class QuotaStatusBar {
   }
 
   /**
-   * 构建 Tooltip 文本 - 简洁表格格式
+   * 构建 Tooltip 数据
    */
-  private buildTooltip(quota: ProviderQuota, title: string): string {
-    const lines: string[] = [`${title} 额度使用情况`, ''];
-
-    // 表头
-    lines.push('限频类型      剩余量      重置时间');
-    lines.push('─────────────────────────────────────');
-
-    // 数据行
-    quota.limits.forEach((limit) => {
-      const typeName = this.formatLimitTypeName(limit, quota.provider);
-      const remaining = this.formatRemaining(limit);
-      const resetTime = this.formatResetTime(limit.resetTime);
-
-      // 对齐：类型12字符，剩余12字符
-      const typePadded = typeName.padEnd(12, ' ');
-      const remainingPadded = remaining.padEnd(12, ' ');
-
-      lines.push(`${typePadded} ${remainingPadded} ${resetTime}`);
-    });
-
-    lines.push('');
-    lines.push('点击可手动刷新');
-
-    return lines.join('\n');
+  private buildTooltipData(quota: ProviderQuota, title: string): {
+    title: string;
+    limits: Array<{ type: string; remaining: string; resetTime: string; note?: string }>;
+  } {
+    return {
+      title: `${title} 额度使用情况`,
+      limits: quota.limits.map((limit) => ({
+        type: this.formatLimitTypeName(limit, quota.provider),
+        remaining: this.formatRemaining(limit),
+        resetTime: this.formatResetTime(limit.resetTime),
+        // Kimi 的 300 分钟限制 API 返回数据有误，添加说明
+        note: (quota.provider === 'kimi' &&
+               limit.window.unit === 'minute' &&
+               limit.window.duration === 300)
+          ? '⚠️ Kimi API 返回数据有误，请参考官方后台'
+          : undefined,
+      })),
+    };
   }
 
   /**
@@ -288,9 +317,13 @@ export class QuotaStatusBar {
 
     // 智谱 AI 的特殊命名
     if (provider === 'zhipu') {
-      // MCP每月（按天的长期限制）
+      // MCP每月额度：按天的长期限制（28天以上）
       if (unit === 'day' && duration >= 28) {
         return 'MCP每月';
+      }
+      // 每周额度：7天
+      if (unit === 'day' && duration === 7) {
+        return '每周额度';
       }
       // 每5小时
       if (unit === 'hour' && duration === 5) {
@@ -301,6 +334,10 @@ export class QuotaStatusBar {
         return `每${duration}小时`;
       }
       if (unit === 'minute') {
+        // 标记为分钟但实际是月度额度的（remaining > 1000）
+        if (duration === 1 && limit.remaining !== undefined && limit.remaining > 1000) {
+          return 'MCP每月';
+        }
         return `每${duration}分钟`;
       }
       return '限额';
@@ -344,7 +381,15 @@ export class QuotaStatusBar {
   private formatRemaining(limit: QuotaLimit): string {
     const remainingPercent = 100 - limit.percentage;
 
+    // 如果 remaining 和 percentage 不匹配（可能有缓存），优先显示 percentage
     if (limit.remaining !== undefined && limit.total !== undefined) {
+      // 检查 remaining 和 percentage 是否一致
+      const calculatedPercent = Math.round((limit.remaining / limit.total) * 100);
+      if (Math.abs(calculatedPercent - remainingPercent) > 5) {
+        // 不一致，使用 percentage 计算并显示
+        const estimatedRemaining = Math.round(limit.total * (remainingPercent / 100));
+        return `${estimatedRemaining} (${remainingPercent}%)`;
+      }
       return `${limit.remaining} (${remainingPercent}%)`;
     }
 
@@ -374,10 +419,14 @@ export class QuotaStatusBar {
    */
   destroy(): void {
     this.stopAutoRefresh();
+    // 销毁所有 tooltip
+    this.providerItems.forEach((item) => {
+      item.tooltip.destroy();
+    });
+    this.providerItems.clear();
     if (this.containerEl) {
       this.containerEl.remove();
       this.containerEl = null;
     }
-    this.providerItems.clear();
   }
 }

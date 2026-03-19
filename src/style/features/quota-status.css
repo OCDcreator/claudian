@@ -29,8 +29,23 @@
 
 /* 图标 */
 .claudian-quota-icon {
-  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
   line-height: 1;
+  flex-shrink: 0;
+}
+
+.claudian-quota-icon svg {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+  display: block;
 }
 
 /* 百分比数字 */
@@ -82,6 +97,170 @@
 /* 设置面板样式 */
 .claudian-settings-coding-plan-api-input {
   font-family: var(--font-monospace);
+}
+
+/* ==================== 现代化玻璃质感 Tooltip ==================== */
+
+.claudian-quota-tooltip {
+  position: fixed;
+  z-index: 999999;
+  min-width: 280px;
+  max-width: 360px;
+  background: rgba(var(--background-primary-rgb, 30, 30, 30), 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  padding: 0;
+  overflow: hidden;
+  animation: claudian-tooltip-appear 0.2s ease-out;
+}
+
+@keyframes claudian-tooltip-appear {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Tooltip Header */
+.claudian-quota-tooltip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.claudian-quota-tooltip-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-normal, #e0e0e0);
+  letter-spacing: 0.3px;
+}
+
+.claudian-quota-tooltip-badge {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Tooltip Body */
+.claudian-quota-tooltip-body {
+  padding: 12px 16px;
+}
+
+/* Glass Table */
+.claudian-quota-tooltip-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+}
+
+.claudian-quota-tooltip-table thead th {
+  text-align: left;
+  padding: 8px 0;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.claudian-quota-tooltip-table thead th:first-child {
+  width: 35%;
+}
+
+.claudian-quota-tooltip-table thead th:nth-child(2) {
+  width: 30%;
+  text-align: center;
+}
+
+.claudian-quota-tooltip-table thead th:last-child {
+  width: 35%;
+  text-align: right;
+}
+
+.claudian-quota-tooltip-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.claudian-quota-tooltip-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.claudian-quota-tooltip-table tbody td {
+  padding: 10px 0;
+  color: var(--text-normal, #e0e0e0);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  vertical-align: middle;
+}
+
+.claudian-quota-tooltip-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.claudian-quota-tooltip-type {
+  font-weight: 500;
+}
+
+.claudian-quota-tooltip-remaining {
+  text-align: center;
+  font-family: var(--font-monospace, 'SF Mono', Monaco, monospace);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.claudian-quota-tooltip-reset {
+  text-align: right;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+}
+
+/* Note Row (Warning) */
+.claudian-quota-tooltip-note-row {
+  background: rgba(255, 193, 7, 0.1);
+}
+
+.claudian-quota-tooltip-note {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: #ffc107;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+/* Tooltip Footer */
+.claudian-quota-tooltip-footer {
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: center;
+}
+
+.claudian-quota-tooltip-hint {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
 }
 
 /* 响应式：小屏幕隐藏状态栏 */

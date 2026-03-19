@@ -4,3 +4,4 @@
 
 export type { QuotaStatusBarConfig } from './QuotaStatusBar';
 export { QuotaStatusBar } from './QuotaStatusBar';
+export { QuotaTooltip } from './QuotaTooltip';

@@ -2,6 +2,8 @@
 
 This file contains essential information for AI coding agents working on the Claudian project.
 
+当前项目的开发文档 `DEVLOG.md` 位于 `/Volumes/SDD2T/obsidian-vault-write/技术学习/个人项目开发/claudian插件项目/DEVLOG.md`，记录了详细的开发过程、设计决策、遇到的问题及解决方案。请在开发过程中参考该文档以了解项目的最新进展和历史背景。
+
 ## Project Overview
 
 **Claudian** is an Obsidian plugin that embeds Claude Code as a sidebar chat interface. The vault directory becomes Claude's working directory, giving it full agentic capabilities: file read/write, bash commands, and multi-step workflows.
